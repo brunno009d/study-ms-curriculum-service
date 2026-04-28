@@ -13,17 +13,14 @@ class SubjectRepository {
                 credits,
                 semester_number,
                 area_type,
-                subject_prerequisite (
+                subject_prerequisite!subject_id (
                     prerrequisite_id
-                ),
-                student_subjects (
-                    status
                 )
             `)
             .eq('curriculum_id', curriculumId);
 
         if (error) {
-            throw new Error(`Error en BD [getStudentSubjects]: ${error.message}`);
+            throw new Error(`Error en BD [getSubjectsByCurriculumId]: ${error.message}`);
         }
         return data || [];
     }
