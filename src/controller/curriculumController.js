@@ -25,6 +25,11 @@ class CurriculumController {
             const studentId = req.userId;
             const curriculumData = req.body;
 
+            // Validar que hay datos para actualizar
+            if (!curriculumData || Object.keys(curriculumData).length === 0) {
+                return res.status(400).json({ message: 'Se debe proporcionar al menos un campo para actualizar' });
+            }
+
             const updated = await CurriculumService.updateCurriculum(studentId, curriculumData);
             res.status(200).json(updated);
         } catch (error) {
@@ -50,6 +55,11 @@ class CurriculumController {
             const { curriculumId } = req.params;
             const subjectData = req.body;
 
+            // Validar campos requeridos
+            if (!subjectData.name || subjectData.code === undefined) {
+                return res.status(400).json({ message: 'Campos requeridos faltantes: name y code' });
+            }
+
             const newSubject = await CurriculumService.addSubject(curriculumId, subjectData);
             res.status(201).json(newSubject);
         } catch (error) {
@@ -61,6 +71,11 @@ class CurriculumController {
         try {
             const { subjectId } = req.params;
             const updateData = req.body;
+
+            // Validar que hay datos para actualizar
+            if (!updateData || Object.keys(updateData).length === 0) {
+                return res.status(400).json({ message: 'Se debe proporcionar al menos un campo para actualizar' });
+            }
 
             const updatedSubject = await CurriculumService.patchSubject(subjectId, updateData);
             res.status(200).json(updatedSubject);
@@ -86,6 +101,11 @@ class CurriculumController {
         try {
             const { subjectId } = req.params;
             const { prerequisiteId } = req.body;
+
+            // Validar campo requerido
+            if (!prerequisiteId) {
+                return res.status(400).json({ message: 'Campo requerido faltante: prerequisiteId' });
+            }
 
             const prerequisite = await CurriculumService.addPrerequisite(subjectId, prerequisiteId);
             res.status(201).json(prerequisite);
@@ -115,6 +135,11 @@ class CurriculumController {
             const studentId = req.userId;
             const { subjectId } = req.params;
             const { status } = req.body; // 'aprobado', 'cursando', 'pendiente'
+
+            // Validar campo requerido
+            if (!status) {
+                return res.status(400).json({ message: 'Campo requerido faltante: status' });
+            }
 
             const progressRecord = await CurriculumService.updateSubjectStatus(studentId, subjectId, status);
             res.status(200).json(progressRecord);
