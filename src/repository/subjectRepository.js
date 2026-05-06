@@ -39,6 +39,17 @@ class SubjectRepository {
         return data;
     }
 
+    // Creación de ramos
+    async bulkCreateSubjects(subjects) {
+        const { data, error } = await supabase
+            .from('subjects')
+            .insert(subjects)
+            .select();
+
+        if (error) throw error;
+        return data;
+    }
+
     // Elimina un ramo
     async deleteSubject(subjectId) {
         const { error } = await supabase
@@ -75,6 +86,16 @@ class SubjectRepository {
 
         if (error) throw error;
         return data;
+    }
+
+    // Agregación de prerrequisitos
+    async bulkCreatePrerequisites(prerequisites) {
+        const { data, error } = await supabase
+            .from('subject_prerequisite')
+            .insert(prerequisites);
+
+        if (error) throw error;
+        return true;
     }
 
     // Elimina un prerrequisito

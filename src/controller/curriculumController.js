@@ -48,7 +48,24 @@ class CurriculumController {
         }
     }
 
-    // -> Operaciones ramos
+    async importCurriculum(req, res, next) {
+        try {
+            const studentId = req.userId;
+            const fullData = req.body;
+
+            // Validaciones básicas
+            if (!fullData.curriculum || !fullData.subjects) {
+                return res.status(400).json({ message: 'Formato de importación inválido. Se requiere "curriculum" y "subjects".' });
+            }
+
+            const imported = await CurriculumService.importCurriculum(studentId, fullData);
+            res.status(201).json(imported);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // -> Operaciones de Ramos
 
     async addSubject(req, res, next) {
         try {
