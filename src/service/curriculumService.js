@@ -56,6 +56,75 @@ class CurriculumService {
         return await CurriculumRepository.deleteCurriculum(studentId);
     }
 
+    /**
+    Importa una malla completa (Header + Subjects + Prerequisites)
+    Estructura esperada:
+    {
+      curriculum: { name, university, career, total_credits, total_semesters },
+      subjects: [ { name, code, credits, semester_number, area_type, prerequisites: [code1, code2] } ]
+    }
+     */
+    async importCurriculum(studentId, fullData) {
+        const { curriculum, subjects } = fullData;
+
+        // Verificar si ya existe una malla para el estudiante y borrarla (opcional, según flujo)
+        // Por ahora, si existe, la borramos para re-importar la nueva corregida
+        const existing = await CurriculumRepository.getCurriculumByStudentId(studentId);
+        if (existing) {
+            await CurriculumRepository.deleteCurriculum(studentId);
+        }
+
+        // Crear el header de la malla
+        const newCurriculum = await CurriculumRepository.createCurriculum(studentId, {
+            ...curriculum,
+            student_id: studentId
+        });
+
+        const curriculumId = newCurriculum.id;
+
+        // Preparar los ramos para inserción masiva (sin prerrequisitos aún)
+        const subjectsToInsert = subjects.map(s => ({
+            curriculum_id: curriculumId,
+            name: s.name,
+            code: s.code,
+            credits: s.credits,
+            semester_number: s.semester_number,
+            area_type: s.area_type
+        }));
+
+        const insertedSubjects = await SubjectRepository.bulkCreateSubjects(subjectsToInsert);
+
+        // Mapear Código -> ID de BD para resolver prerrequisitos
+        const codeToIdMap = {};
+        insertedSubjects.forEach(s => {
+            codeToIdMap[s.code] = s.id;
+        });
+
+        // Preparar y crear prerrequisitos
+        const prerequisitesToInsert = [];
+        subjects.forEach(s => {
+            if (s.prerequisites && s.prerequisites.length > 0) {
+                const subjectId = codeToIdMap[s.code];
+                s.prerequisites.forEach(preCode => {
+                    const preId = codeToIdMap[preCode];
+                    if (preId) {
+                        prerequisitesToInsert.push({
+                            subject_id: subjectId,
+                            prerrequisite_id: preId
+                        });
+                    }
+                });
+            }
+        });
+
+        if (prerequisitesToInsert.length > 0) {
+            await SubjectRepository.bulkCreatePrerequisites(prerequisitesToInsert);
+        }
+
+        // Retornar la malla completa recién creada
+        return await this.getFullCurriculum(studentId);
+    }
+
     // -> Operaciones de Ramos
 
     async addSubject(curriculumId, subjectData) {
