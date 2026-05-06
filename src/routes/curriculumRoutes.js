@@ -11,6 +11,9 @@ router.get('/', CurriculumController.getFullCurriculum);
 router.patch('/', CurriculumController.updateCurriculum);
 router.delete('/', CurriculumController.deleteCurriculum);
 
+// Nueva ruta para importación masiva (desde IA o corrección de front)
+router.post('/import', CurriculumController.importCurriculum);
+
 // --- Rutas de Ramos (Subjects)
 router.post('/:curriculumId/subjects', CurriculumController.addSubject);
 router.patch('/subjects/:subjectId', CurriculumController.patchSubject);
