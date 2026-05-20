@@ -1,10 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const CurriculumController = require('../controller/curriculumController');
+const aiContextController = require('../controller/aiContextController');
 const requireAuth = require('../middleware/requireAuth');
 
 // Aplica el middleware de autenticación a todas las rutas de este router
 router.use(requireAuth);
+
+// IA: Contexto completo o filtrado de la malla (solo lectura)
+router.get('/ai-context/current', aiContextController.getCurrentContext);
+router.get('/ai-context', aiContextController.getContext);
 
 // --- Rutas de Malla (Header y Full Body)
 router.get('/', CurriculumController.getFullCurriculum);
@@ -15,6 +20,8 @@ router.delete('/', CurriculumController.deleteCurriculum);
 router.post('/import', CurriculumController.importCurriculum);
 
 // --- Rutas de Ramos (Subjects)
+router.get('/subjects/current', CurriculumController.getCurrentSubjects);
+router.get('/subjects/semester/:semesterId', CurriculumController.getSubjectsBySemester);
 router.post('/:curriculumId/subjects', CurriculumController.addSubject);
 router.patch('/subjects/:subjectId', CurriculumController.patchSubject);
 router.delete('/subjects/:subjectId', CurriculumController.removeSubject);

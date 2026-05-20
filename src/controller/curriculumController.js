@@ -67,6 +67,43 @@ class CurriculumController {
 
     // -> Operaciones de Ramos
 
+    async getCurrentSubjects(req, res, next) {
+        try {
+            const studentId = req.userId;
+            const subjects = await CurriculumService.getCurrentSubjects(studentId);
+
+            if (!subjects) {
+                return res.status(404).json({ message: 'Malla no encontrada para este estudiante.' });
+            }
+
+            res.status(200).json(subjects);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getSubjectsBySemester(req, res, next) {
+        try {
+            const studentId = req.userId;
+            const { semesterId } = req.params;
+
+            const parsedSemesterId = parseInt(semesterId, 10);
+            if (isNaN(parsedSemesterId)) {
+                return res.status(400).json({ message: 'El id del semestre debe ser un número válido.' });
+            }
+
+            const subjects = await CurriculumService.getSubjectsBySemester(studentId, parsedSemesterId);
+
+            if (!subjects) {
+                return res.status(404).json({ message: 'Malla no encontrada para este estudiante.' });
+            }
+
+            res.status(200).json(subjects);
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async addSubject(req, res, next) {
         try {
             const { curriculumId } = req.params;
