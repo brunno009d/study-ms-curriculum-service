@@ -56,14 +56,8 @@ class CurriculumService {
         return await CurriculumRepository.deleteCurriculum(studentId);
     }
 
-    /**
-    Importa una malla completa (Header + Subjects + Prerequisites)
-    Estructura esperada:
-    {
-      curriculum: { name, university, career, total_credits, total_semesters },
-      subjects: [ { name, code, credits, semester_number, area_type, prerequisites: [code1, code2] } ]
-    }
-     */
+    // Importa una malla completa (Header + Subjects + Prerequisites)
+
     async importCurriculum(studentId, fullData) {
         const { curriculum, subjects } = fullData;
 
@@ -126,6 +120,20 @@ class CurriculumService {
     }
 
     // -> Operaciones de Ramos
+
+    async getCurrentSubjects(studentId) {
+        const fullCurriculum = await this.getFullCurriculum(studentId);
+        if (!fullCurriculum) return null;
+
+        return fullCurriculum.body.filter(subject => subject.status === 'cursando');
+    }
+
+    async getSubjectsBySemester(studentId, semesterId) {
+        const fullCurriculum = await this.getFullCurriculum(studentId);
+        if (!fullCurriculum) return null;
+
+        return fullCurriculum.body.filter(subject => subject.semester_number === semesterId);
+    }
 
     async addSubject(curriculumId, subjectData) {
         // Aquí podrías validar que los créditos no sean negativos, etc.

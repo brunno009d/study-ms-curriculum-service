@@ -32,6 +32,10 @@ Microservicio encargado de la gestión de mallas curriculares, ramos, prerrequis
 
 Todas las rutas requieren un token válido de Supabase en el header `Authorization: Bearer <token>`.
 
+### Contexto de Inteligencia Artificial (IA)
+- `GET /ai-context`: Obtiene la malla curricular completa adaptada para el contexto de la IA (Header + Ramos + Progreso).
+- `GET /ai-context/current`: Obtiene únicamente las materias que el estudiante está cursando actualmente para el contexto de la IA.
+
 ### Malla Curricular (Header)
 - `GET /`: Obtiene la malla completa del estudiante (Header + Ramos + Progreso).
 - `PATCH /`: Actualiza los datos generales de la malla (nombre, universidad, etc).
@@ -39,6 +43,8 @@ Todas las rutas requieren un token válido de Supabase en el header `Authorizati
 - **`POST /import`**: Importación masiva de una malla mediante un JSON estructurado (ideal para datos provenientes de IA).
 
 ### Ramos (Subjects)
+- `GET /subjects/current`: Obtiene las materias que el estudiante está cursando actualmente.
+- `GET /subjects/semester/:semesterId`: Obtiene las materias correspondientes a un semestre específico (filtrado por su ID numérico).
 - `POST /:curriculumId/subjects`: Agrega un nuevo ramo.
 - `PATCH /subjects/:subjectId`: Actualiza la información de un ramo.
 - `DELETE /subjects/:subjectId`: Elimina un ramo.
