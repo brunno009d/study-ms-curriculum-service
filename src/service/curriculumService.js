@@ -61,62 +61,134 @@ class CurriculumService {
     async importCurriculum(studentId, fullData) {
         const { curriculum, subjects } = fullData;
 
-        // Verificar si ya existe una malla para el estudiante y borrarla (opcional, según flujo)
-        // Por ahora, si existe, la borramos para re-importar la nueva corregida
+        // Verificar si ya existe una malla para el estudiante
         const existing = await CurriculumRepository.getCurriculumByStudentId(studentId);
+
         if (existing) {
-            await CurriculumRepository.deleteCurriculum(studentId);
-        }
+            // -- MODO SINCRONIZACIÓN (Preserva progreso y IDs) --
+            const curriculumId = existing.id;
+            
+            // Actualizar header
+            await CurriculumRepository.patchCurriculum(studentId, curriculum);
 
-        // Crear el header de la malla
-        const newCurriculum = await CurriculumRepository.createCurriculum(studentId, {
-            ...curriculum,
-            student_id: studentId
-        });
+            // Obtener ramos actuales
+            const existingSubjects = await SubjectRepository.getSubjectsByCurriculumId(curriculumId);
+            const existingSubjectIds = existingSubjects.map(s => s.id);
 
-        const curriculumId = newCurriculum.id;
+            // Determinar qué ramos vienen con un ID numérico válido
+            const incomingIds = subjects.filter(s => typeof s.id === 'number').map(s => s.id);
 
-        // Preparar los ramos para inserción masiva (sin prerrequisitos aún)
-        const subjectsToInsert = subjects.map(s => ({
-            curriculum_id: curriculumId,
-            name: s.name,
-            code: s.code,
-            credits: s.credits,
-            semester_number: s.semester_number,
-            area_type: s.area_type
-        }));
-
-        const insertedSubjects = await SubjectRepository.bulkCreateSubjects(subjectsToInsert);
-
-        // Mapear Código -> ID de BD para resolver prerrequisitos
-        const codeToIdMap = {};
-        insertedSubjects.forEach(s => {
-            codeToIdMap[s.code] = s.id;
-        });
-
-        // Preparar y crear prerrequisitos
-        const prerequisitesToInsert = [];
-        subjects.forEach(s => {
-            if (s.prerequisites && s.prerequisites.length > 0) {
-                const subjectId = codeToIdMap[s.code];
-                s.prerequisites.forEach(preCode => {
-                    const preId = codeToIdMap[preCode];
-                    if (preId) {
-                        prerequisitesToInsert.push({
-                            subject_id: subjectId,
-                            prerrequisite_id: preId
-                        });
-                    }
-                });
+            // Borrar ramos que ya no están (se borrarán en cascada sus notas/prerrequisitos)
+            const idsToDelete = existingSubjectIds.filter(id => !incomingIds.includes(id));
+            for (const id of idsToDelete) {
+                await SubjectRepository.deleteSubject(id);
             }
-        });
 
-        if (prerequisitesToInsert.length > 0) {
-            await SubjectRepository.bulkCreatePrerequisites(prerequisitesToInsert);
+            // Upsert ramos
+            const codeToIdMap = {};
+            for (const s of subjects) {
+                const subjectData = {
+                    name: s.name,
+                    code: s.code,
+                    credits: s.credits,
+                    semester_number: s.semester_number,
+                    area_type: s.area_type
+                };
+
+                if (s.id && typeof s.id === 'number' && existingSubjectIds.includes(s.id)) {
+                    await SubjectRepository.updateSubject(s.id, subjectData);
+                    codeToIdMap[s.code] = s.id;
+                } else {
+                    const newSub = await SubjectRepository.createSubject({
+                        ...subjectData,
+                        curriculum_id: curriculumId
+                    });
+                    s.id = newSub.id;
+                    codeToIdMap[s.code] = newSub.id;
+                }
+            }
+
+            // Sincronizar prerrequisitos: Borramos los actuales de los ramos que sobrevivieron
+            // La base de datos es Supabase, como no tenemos un bulk delete, iteramos.
+            const remainingSubjects = await SubjectRepository.getSubjectsByCurriculumId(curriculumId);
+            for (const s of remainingSubjects) {
+                if (s.subject_prerequisite && s.subject_prerequisite.length > 0) {
+                    for (const pre of s.subject_prerequisite) {
+                        await SubjectRepository.removePrerequisite(s.id, pre.prerrequisite_id);
+                    }
+                }
+            }
+
+            // Insertar los nuevos prerrequisitos
+            const prerequisitesToInsert = [];
+            for (const s of subjects) {
+                if (s.prerequisites && s.prerequisites.length > 0) {
+                    const subjectId = codeToIdMap[s.code];
+                    for (const preCode of s.prerequisites) {
+                        const preId = codeToIdMap[preCode];
+                        if (preId) {
+                            prerequisitesToInsert.push({
+                                subject_id: subjectId,
+                                prerrequisite_id: preId
+                            });
+                        }
+                    }
+                }
+            }
+
+            if (prerequisitesToInsert.length > 0) {
+                await SubjectRepository.bulkCreatePrerequisites(prerequisitesToInsert);
+            }
+
+            return await this.getFullCurriculum(studentId);
+
+        } else {
+            // -- MODO CREACIÓN (Desde cero) --
+            const newCurriculum = await CurriculumRepository.createCurriculum(studentId, {
+                ...curriculum,
+                student_id: studentId
+            });
+
+            const curriculumId = newCurriculum.id;
+
+            const subjectsToInsert = subjects.map(s => ({
+                curriculum_id: curriculumId,
+                name: s.name,
+                code: s.code,
+                credits: s.credits,
+                semester_number: s.semester_number,
+                area_type: s.area_type
+            }));
+
+            const insertedSubjects = await SubjectRepository.bulkCreateSubjects(subjectsToInsert);
+
+            const codeToIdMap = {};
+            insertedSubjects.forEach(s => {
+                codeToIdMap[s.code] = s.id;
+            });
+
+            const prerequisitesToInsert = [];
+            subjects.forEach(s => {
+                if (s.prerequisites && s.prerequisites.length > 0) {
+                    const subjectId = codeToIdMap[s.code];
+                    s.prerequisites.forEach(preCode => {
+                        const preId = codeToIdMap[preCode];
+                        if (preId) {
+                            prerequisitesToInsert.push({
+                                subject_id: subjectId,
+                                prerrequisite_id: preId
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (prerequisitesToInsert.length > 0) {
+                await SubjectRepository.bulkCreatePrerequisites(prerequisitesToInsert);
+            }
+
+            return await this.getFullCurriculum(studentId);
         }
-
-        // Retornar la malla completa recién creada
-        return await this.getFullCurriculum(studentId);
     }
 
     // -> Operaciones de Ramos
