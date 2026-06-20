@@ -1,33 +1,30 @@
-const supabase = require('../config/supabase');
+import supabase from '../config/supabase.js'
 
 class ProgressRepository {
 
-    // Obtiene todos los estados de los ramos de un estudiante.
     async getStudentProgress(studentId) {
         const { data, error } = await supabase
             .from('student_subjects')
             .select('subject_id, status')
-            .eq('student_id', studentId);
+            .eq('student_id', studentId)
 
-        if (error) throw error;
-        return data;
+        if (error) throw error
+        return data
     }
 
-    // Inserta o actualiza el estado de un ramo con Upsert.
     async upsertSubjectStatus(studentId, subjectId, status) {
         const { data, error } = await supabase
             .from('student_subjects')
             .upsert(
                 { student_id: studentId, subject_id: subjectId, status: status },
-                { onConflict: 'student_id, subject_id' } // Utiliza la restricción UNIQUE que tiene la BD
+                { onConflict: 'student_id, subject_id' }
             )
             .select()
-            .single();
+            .single()
 
-        if (error) throw error;
-        return data;
+        if (error) throw error
+        return data
     }
-
 }
 
-module.exports = new ProgressRepository();
+export default new ProgressRepository()
