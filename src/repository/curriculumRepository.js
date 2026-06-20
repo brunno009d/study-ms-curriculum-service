@@ -1,56 +1,52 @@
-const supabase = require('../config/supabase');
+import supabase from '../config/supabase.js'
 
 class CurriculumRepository {
 
-    // Obtener los datos de la malla
     async getCurriculumByStudentId(studentId) {
         const { data, error } = await supabase
             .from('curriculum')
             .select('*')
             .eq('student_id', studentId)
-            .single();
+            .single()
 
         if (error && error.code !== 'PGRST116') {
-            throw new Error(`Error en BD [getCurriculumHeader]: ${error.message}`);
+            throw new Error(`Error en BD [getCurriculumHeader]: ${error.message}`)
         }
-        return data;
+        return data
     }
 
-    // Crear la malla
     async createCurriculum(studentId, curriculumData) {
         const { data, error } = await supabase
             .from('curriculum')
             .insert([curriculumData])
             .select()
-            .single();
+            .single()
 
-        if (error) throw error;
-        return data;
+        if (error) throw error
+        return data
     }
 
-    // Actualizar la malla
     async patchCurriculum(studentId, curriculumData) {
         const { data, error } = await supabase
             .from('curriculum')
             .update(curriculumData)
             .eq('student_id', studentId)
             .select()
-            .single();
+            .single()
 
-        if (error) throw error;
-        return data;
+        if (error) throw error
+        return data
     }
 
-    // Borrar la malla
     async deleteCurriculum(studentId) {
         const { error } = await supabase
             .from('curriculum')
             .delete()
-            .eq('student_id', studentId);
+            .eq('student_id', studentId)
 
-        if (error) throw error;
-        return true;
+        if (error) throw error
+        return true
     }
 }
 
-module.exports = new CurriculumRepository();
+export default new CurriculumRepository()

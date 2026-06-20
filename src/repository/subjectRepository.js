@@ -1,8 +1,7 @@
-const supabase = require('../config/supabase');
+import supabase from '../config/supabase.js'
 
 class SubjectRepository {
 
-    // Cargar la malla con los ramos completamente
     async getSubjectsByCurriculumId(curriculumId) {
         const { data, error } = await supabase
             .from('subjects')
@@ -17,98 +16,86 @@ class SubjectRepository {
                     prerrequisite_id
                 )
             `)
-            .eq('curriculum_id', curriculumId);
+            .eq('curriculum_id', curriculumId)
 
         if (error) {
-            throw new Error(`Error en BD [getSubjectsByCurriculumId]: ${error.message}`);
+            throw new Error(`Error en BD [getSubjectsByCurriculumId]: ${error.message}`)
         }
-        return data || [];
+        return data || []
     }
 
-    // --- operaciones de Ramos ---
-
-    // Crea un ramo
     async createSubject(subjectData) {
         const { data, error } = await supabase
             .from('subjects')
             .insert([subjectData])
             .select()
-            .single();
+            .single()
 
-        if (error) throw error;
-        return data;
+        if (error) throw error
+        return data
     }
 
-    // Creación de ramos
     async bulkCreateSubjects(subjects) {
         const { data, error } = await supabase
             .from('subjects')
             .insert(subjects)
-            .select();
+            .select()
 
-        if (error) throw error;
-        return data;
+        if (error) throw error
+        return data
     }
 
-    // Elimina un ramo
     async deleteSubject(subjectId) {
         const { error } = await supabase
             .from('subjects')
             .delete()
-            .eq('id', subjectId);
+            .eq('id', subjectId)
 
-        if (error) throw error;
-        return true;
+        if (error) throw error
+        return true
     }
 
-    // Actualiza un ramo
     async updateSubject(subjectId, updateData) {
         const { data, error } = await supabase
             .from('subjects')
             .update(updateData)
             .eq('id', subjectId)
             .select()
-            .single();
+            .single()
 
-        if (error) throw error;
-        return data;
+        if (error) throw error
+        return data
     }
 
-    // --- Prerrequisitos ---
-
-    // Agrega un prerrequisito
     async addPrerequisite(subjectId, prerequisiteId) {
         const { data, error } = await supabase
             .from('subject_prerequisite')
             .insert([{ subject_id: subjectId, prerrequisite_id: prerequisiteId }])
             .select()
-            .single();
+            .single()
 
-        if (error) throw error;
-        return data;
+        if (error) throw error
+        return data
     }
 
-    // Agregación de prerrequisitos
     async bulkCreatePrerequisites(prerequisites) {
         const { data, error } = await supabase
             .from('subject_prerequisite')
-            .insert(prerequisites);
+            .insert(prerequisites)
 
-        if (error) throw error;
-        return true;
+        if (error) throw error
+        return true
     }
 
-    // Elimina un prerrequisito
     async removePrerequisite(subjectId, prerequisiteId) {
         const { error } = await supabase
             .from('subject_prerequisite')
             .delete()
-            .match({ subject_id: subjectId, prerrequisite_id: prerequisiteId });
+            .match({ subject_id: subjectId, prerrequisite_id: prerequisiteId })
 
-        if (error) throw error;
-        return true;
+        if (error) throw error
+        return true
     }
-
 }
 
-module.exports = new SubjectRepository();
+export default new SubjectRepository()

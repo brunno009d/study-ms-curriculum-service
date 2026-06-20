@@ -1,36 +1,29 @@
-const express = require('express');
-const router = express.Router();
-const CurriculumController = require('../controller/curriculumController');
-const aiContextController = require('../controller/aiContextController');
-const requireAuth = require('../middleware/requireAuth');
+import express from 'express'
+import CurriculumController from '../controller/curriculumController.js'
+import { getContext, getCurrentContext } from '../controller/aiContextController.js'
+import requireAuth from '../middleware/requireAuth.js'
 
-// Aplica el middleware de autenticación a todas las rutas de este router
-router.use(requireAuth);
+const router = express.Router()
 
-// IA: Contexto completo o filtrado de la malla (solo lectura)
-router.get('/ai-context/current', aiContextController.getCurrentContext);
-router.get('/ai-context', aiContextController.getContext);
+router.use(requireAuth)
 
-// --- Rutas de Malla (Header y Full Body)
-router.get('/', CurriculumController.getFullCurriculum);
-router.patch('/', CurriculumController.updateCurriculum);
-router.delete('/', CurriculumController.deleteCurriculum);
+router.get('/ai-context/current', getCurrentContext)
+router.get('/ai-context', getContext)
 
-// Nueva ruta para importación masiva (desde IA o corrección de front)
-router.post('/import', CurriculumController.importCurriculum);
+router.get('/', CurriculumController.getFullCurriculum)
+router.patch('/', CurriculumController.updateCurriculum)
+router.delete('/', CurriculumController.deleteCurriculum)
+router.post('/import', CurriculumController.importCurriculum)
 
-// --- Rutas de Ramos (Subjects)
-router.get('/subjects/current', CurriculumController.getCurrentSubjects);
-router.get('/subjects/semester/:semesterId', CurriculumController.getSubjectsBySemester);
-router.post('/:curriculumId/subjects', CurriculumController.addSubject);
-router.patch('/subjects/:subjectId', CurriculumController.patchSubject);
-router.delete('/subjects/:subjectId', CurriculumController.removeSubject);
+router.get('/subjects/current', CurriculumController.getCurrentSubjects)
+router.get('/subjects/semester/:semesterId', CurriculumController.getSubjectsBySemester)
+router.post('/:curriculumId/subjects', CurriculumController.addSubject)
+router.patch('/subjects/:subjectId', CurriculumController.patchSubject)
+router.delete('/subjects/:subjectId', CurriculumController.removeSubject)
 
-// --- Rutas de Prerrequisitos
-router.post('/subjects/:subjectId/prerequisites', CurriculumController.addPrerequisite);
-router.delete('/subjects/:subjectId/prerequisites/:prerequisiteId', CurriculumController.removePrerequisite);
+router.post('/subjects/:subjectId/prerequisites', CurriculumController.addPrerequisite)
+router.delete('/subjects/:subjectId/prerequisites/:prerequisiteId', CurriculumController.removePrerequisite)
 
-// --- Rutas de Progreso (Student Subjects)
-router.patch('/subjects/:subjectId/status', CurriculumController.updateSubjectStatus);
+router.patch('/subjects/:subjectId/status', CurriculumController.updateSubjectStatus)
 
-module.exports = router;
+export default router
