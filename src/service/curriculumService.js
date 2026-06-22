@@ -51,7 +51,6 @@ class CurriculumService {
 
         const existing = await CurriculumRepository.getCurriculumByStudentId(studentId)
 
-   feature/test-setup
         if (existing) {
             const curriculumId = existing.id
 
